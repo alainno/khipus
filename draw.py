@@ -42,7 +42,10 @@ def drawPrimaryCord(cord_length, beginning, termination, twist):
   
   #drawCords(khipu):
   #total_cord_cluster = getTotalClusteCord()
-  clusters = getClusterCords("1000000")
+  db = DB()
+  db.connectDB()
+
+  clusters = db.getClusterCords("1000000")
   #total_cord_cluster = len(cluster)
 
   #for i in range(total_cord_cluster):
@@ -67,9 +70,12 @@ def drawCords(img):
 
 def drawKhipu(id):
 
+  db = DB()
+  db.connectDB()
   #id = "1000189"
+  x_scale = 100
 
-  data = getPrimaryCordData(id)
+  data = db.getPrimaryCordData(id)
 
   print(data)
 
@@ -84,7 +90,8 @@ def drawKhipu(id):
   #drawCords()
   x_margin = 20
   y_margin = 20
-  cord_length *= 10
+  #cord_length *= 10
+  cord_length *= x_scale
 
   x1 = x_margin
   y1 = y_margin
@@ -105,35 +112,63 @@ def drawKhipu(id):
   
   #drawCords(khipu):
   #total_cord_cluster = getTotalClusteCord()
-  clusters = getClusterCords(pcord_id)
+  clusters = db.getClusterCords(pcord_id)
   #total_cord_cluster = len(cluster)
 
   print("total cluster: ", len(clusters))
 
   #for i in range(total_cord_cluster):
   for cluster in clusters:
-    #start_position = 
+    
+    print(cluster)
+
     num_cords = cluster['NUM_CORDS']
 
     start_position = cluster['START_POSITION']
     end_position = cluster['END_POSITION']
 
-    x1 += start_position*10
+    x1 = start_position*x_scale + x_margin
 
-    cords_space = ((end_position-start_position)/num_cords)*10
+    cords_space = ((end_position-start_position)/num_cords)*x_scale
 
-    cords = getCords(int(cluster['CLUSTER_ID']))
+    cords = db.getCords(int(cluster['CLUSTER_ID']))
 
     for cord in cords:
+
+      print(cord)
+
       cord_length = cord['CORD_LENGTH']*10
       x1 += cords_space
       x2 = x1
       y2 = y1 + cord_length
 
       cv2.line(khipu, (x1, y1), (x2, y2), (0, 255, 0), thickness=1)
+        
+      #setText(khipu, cord['TWIST'], (x1, int(y1+cord_length/2) ) )
+      setText(khipu, cord['TERMINATION'], (x1, y2) )
 
-  cv2.imshow('Khipu',khipu)
-  cv2.waitKey(0)  
+      knot_clusters = db.getKnotClusters(cord['CORD_ID'])
+
+      for knot_cluster in knot_clusters:
+          y_knot = knot_cluster['START_POS']*10
+
+          knot_list = db.getKnotCluster(knot_cluster['CLUSTER_ID'])
+
+          for knot in knot_list:
+            print(knot)
+            y_knot += 10
+            num_turns = str(knot['NUM_TURNS'])
+            #try:
+            #  num_turns
+            #except 
+            #num_turns = '-' if num_turns is None else num_turns
+            setText(khipu, num_turns, (x1, y_knot) )
+
+  #cv2.imshow('Khipu',khipu)
+  #cv2.waitKey(0)
+  #return khipu
+  cv2.imwrite("khipu.png", khipu)
+    
   '''
   window = PanZoomWindow(khipu, "test window")
   key = -1
